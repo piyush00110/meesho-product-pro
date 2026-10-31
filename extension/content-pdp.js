@@ -11,6 +11,8 @@
   if (!MP) return;
 
   let lastProduct = null;
+  let lastSig = '';
+  let lastShareCode = '';
   let extracting = false;
   let lastExtractAt = 0;
   let host = null;
@@ -245,6 +247,38 @@
   }
 
   /* ---------------- embedded JSON ---------------- */
+  /* Read one balanced {...} / [...] JSON object starting at `start`.
+     Inline assignments are often followed by more JS, so a plain regex fails. */
+  function sliceBalanced(text, start) {
+    const open = text[start];
+    if (open !== '{' && open !== '[') return '';
+    const close = open === '{' ? '}' : ']';
+    let depth = 0;
+    let inStr = false;
+    let quote = '';
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i];
+      if (inStr) {
+        if (ch === '\\') {
+          i++;
+        } else if (ch === quote) {
+          inStr = false;
+        }
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        inStr = true;
+        quote = ch;
+      } else if (ch === open) {
+        depth++;
+      } else if (ch === close) {
+        depth--;
+        if (depth === 0) return text.slice(start, i + 1);
+      }
+    }
+    return '';
+  }
+
   function parseScriptJson(text) {
     const t = String(text || '').trim().replace(/^<!--|-->$/g, '').trim();
     if (!t) return null;
@@ -255,14 +289,16 @@
         /* not pure json */
       }
     }
-    const m = t.match(
-      /(?:window\.)?(?:__NEXT_DATA__|__INITIAL_STATE__|__PRELOADED_STATE__|__APOLLO_STATE__|__INITIAL_DATA__|__PRODUCT__)\s*=\s*(\{[\s\S]*\})\s*;?\s*$/
-    );
+    const re = /(?:window\.)?(?:__NEXT_DATA__|__INITIAL_STATE__|__PRELOADED_STATE__|__APOLLO_STATE__|__INITIAL_DATA__|__PRODUCT__)\s*=\s*/;
+    const m = re.exec(t);
     if (m) {
-      try {
-        return JSON.parse(m[1]);
-      } catch (e) {
-        /* ignore */
+      const body = sliceBalanced(t, m.index + m[0].length);
+      if (body) {
+        try {
+          return JSON.parse(body);
+        } catch (e) {
+          /* not plain JSON (JS object literal) */
+        }
       }
     }
     return null;
@@ -497,6 +533,66 @@
       care: '',
       extractedAt: 0
     };
+  }
+
+  /* Some pages (blocked / captcha / 404) are not products. Never capture
+     them and never overwrite a good product with an empty one. */
+  const BLOCK_RE = /(access\s+denied|request\s+blocked|forbidden|unusual\s+traffic|are\s+you\s+a\s+robot|captcha|verify\s+you\s+are\s+human|page\s+not\s+found|something\s+went\s+wrong)/i;
+
+  function pageBlocked() {
+    const head = clean((document.title || '') + ' ' + ((document.body && document.body.innerText) || '').slice(0, 1600));
+    return BLOCK_RE.test(head);
+  }
+
+  function productScore(p) {
+    if (!p) return 0;
+    return (
+      (p.title ? 2 : 0) +
+      (Number(p.price) > 0 ? 2 : 0) +
+      ((p.images || []).length ? 2 : 0) +
+      (Object.keys(p.specifications || {}).length ? 2 : 0) +
+      (p.description ? 1 : 0) +
+      (p.brand ? 1 : 0)
+    );
+  }
+
+  function productSignature(p) {
+    if (!p) return '';
+    return [
+      p.title || '',
+      p.price || 0,
+      (p.images || []).length,
+      Object.keys(p.specifications || {}).length,
+      String(p.description || '').length,
+      (p.colors || []).join(','),
+      (p.sizes || []).join(','),
+      p.brand || ''
+    ].join('|');
+  }
+
+  /* A later capture may be missing fields that were already found (lazy
+     sections, network hiccups). Keep the richer data for the same product. */
+  function mergeProduct(next, prev) {
+    if (!next || !prev) return next;
+    const sameProduct =
+      (!prev.productId || !next.productId || prev.productId === next.productId) &&
+      (!prev.url || !next.url || prev.url === next.url);
+    if (!sameProduct) return next;
+
+    ['brand', 'category', 'subcategory', 'fabric', 'pattern', 'rating', 'ratingCount', 'description',
+      'seller', 'returnPolicy', 'cod', 'stock', 'keywords', 'care'].forEach((key) => {
+      if (!next[key] && prev[key]) next[key] = prev[key];
+    });
+    if (!next.price && prev.price) next.price = prev.price;
+    if (!next.mrp && prev.mrp) next.mrp = prev.mrp;
+    if (!next.discount && prev.discount) next.discount = prev.discount;
+    if (!(next.colors || []).length && (prev.colors || []).length) next.colors = prev.colors.slice();
+    if (!(next.sizes || []).length && (prev.sizes || []).length) next.sizes = prev.sizes.slice();
+    if (!(next.images || []).length && (prev.images || []).length) next.images = prev.images.slice();
+    if (!(next.highlights || []).length && (prev.highlights || []).length) next.highlights = prev.highlights.slice();
+    if (!next.mainImage && prev.mainImage) next.mainImage = prev.mainImage;
+    next.specifications = Object.assign({}, prev.specifications || {}, next.specifications || {});
+    return next;
   }
 
   function applyEmbedded(p, o) {
@@ -872,6 +968,9 @@
     p.extractedAt = Date.now();
 
     if (!p.title || p.title.length < 3) return null;
+    if (pageBlocked() || /^access\s+denied$/i.test(p.title)) return null;
+    /* Require a real product signal, not just a page title. */
+    if (productScore(p) < 4) return null;
     return p;
   }
 
@@ -986,14 +1085,13 @@
     extracting = true;
     lastExtractAt = Date.now();
     try {
-      const p = extract();
-      if (p && p.title) {
-        const changed =
-          !lastProduct ||
-          lastProduct.title !== p.title ||
-          lastProduct.price !== p.price ||
-          lastProduct.images.length !== p.images.length;
+      let p = extract();
+      if (p) {
+        p = mergeProduct(p, lastProduct);
+        const sig = productSignature(p);
+        const changed = !lastProduct || sig !== lastSig;
         lastProduct = p;
+        lastSig = sig;
         if (changed) {
           try {
             await chrome.storage.local.set({ mpProduct: p, mpProductAt: Date.now() });
@@ -1015,11 +1113,16 @@
             /* no background */
           }
           cacheImages(p.images);
+          buildShareCache(p);
         }
         renderPanel();
         return p;
       }
-      status('Details nahi mile. Page poora load hone ke baad extension icon se retry karo.', 'err');
+      if (pageBlocked()) {
+        status('Meesho ne page block kiya (Access Denied / captcha). Page refresh karke dobara try karo.', 'err');
+      } else {
+        status('Details nahi mile. Page poora load hone ke baad extension icon se retry karo.', 'err');
+      }
       return null;
     } catch (e) {
       status('Extract error: ' + e.message, 'err');
@@ -1070,6 +1173,20 @@
     }
   }
 
+  /* Build the share code in the background so the button can copy it
+     synchronously (clipboard APIs need the click's user activation). */
+  async function buildShareCache(p) {
+    if (!p) return '';
+    try {
+      const settings = await MP.getSettings();
+      const profile = MP.buildProfile(p, settings);
+      lastShareCode = await MP.encodeShare(p, settings, { profile });
+      return lastShareCode;
+    } catch (e) {
+      return '';
+    }
+  }
+
   async function shareLink() {
     const p = lastProduct || (await extractAndStore(true));
     if (!p) {
@@ -1079,9 +1196,9 @@
     try {
       status('Share link + photo pack ban raha hai...');
       cacheImages(p.images);
-      const settings = await MP.getSettings();
-      const profile = MP.buildProfile(p, settings);
-      const code = await MP.encodeShare(p, settings, { profile });
+      let code = lastShareCode;
+      if (!code) code = await buildShareCache(p);
+      if (!code) throw new Error('share code not created');
       const link = MP.shareLink(code);
       const ok = await MP.copyText(link);
       status(
@@ -1189,6 +1306,8 @@
     if (location.href === lastUrl) return;
     lastUrl = location.href;
     lastProduct = null;
+    lastSig = '';
+    lastShareCode = '';
     if (host) host.style.display = isProductPage() ? '' : 'none';
     if (isProductPage()) {
       renderPanel();

@@ -76,13 +76,26 @@
       return true;
     } catch (e) {
       try {
+        const prevFocus = document.activeElement;
         const ta = document.createElement('textarea');
         ta.value = String(text);
-        ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none';
         document.body.appendChild(ta);
+        ta.focus({ preventScroll: true });
         ta.select();
+        try {
+          ta.setSelectionRange(0, ta.value.length);
+        } catch (e3) {
+          /* some browsers block setSelectionRange on hidden fields */
+        }
         const ok = document.execCommand('copy');
         ta.remove();
+        try {
+          if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true });
+        } catch (e4) {
+          /* focus restore is best effort */
+        }
         return ok;
       } catch (e2) {
         return false;

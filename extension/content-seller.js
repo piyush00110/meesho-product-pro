@@ -488,6 +488,33 @@
     return bestScore >= 5 ? best : null;
   }
 
+  function dropdownSearchInput() {
+    const inputs = Array.from(
+      document.querySelectorAll(
+        '[role="listbox"] input,[role="dialog"] input,[class*="dropdown" i] input,[class*="select" i] input'
+      )
+    ).filter(visible);
+    return inputs.find((el) => !el.value) || inputs[0] || null;
+  }
+
+  /* Custom dropdowns re-render asynchronously. Confirm the pick stuck before
+     telling the caller the field is done. */
+  async function dropdownAccepted(el, value, option) {
+    const before = MP.clean(el.innerText || el.value || '');
+    await MP.sleep(200);
+    const after = MP.clean(el.innerText || el.value || '');
+    const want = MP.norm(value);
+    if (want && MP.norm(after).indexOf(want) !== -1) return true;
+    if (after && after !== before) return true;
+    if (el.getAttribute('aria-expanded') === 'false') return true;
+    const stillListed =
+      option &&
+      option.isConnected &&
+      visible(option) &&
+      el.getAttribute('aria-expanded') !== 'false';
+    return !stillListed;
+  }
+
   async function setDropdown(el, value) {
     el.scrollIntoView({ block: 'center' });
     el.focus({ preventScroll: true });
@@ -502,7 +529,20 @@
     if (option) {
       option.click();
       await MP.sleep(250);
-      return true;
+      return dropdownAccepted(el, value, option);
+    }
+
+    /* Some pickers open a searchable popup - type the value to filter. */
+    const search = dropdownSearchInput();
+    if (search && search !== el) {
+      nativeSet(search, value);
+      await MP.sleep(550);
+      option = findOption(value);
+      if (option) {
+        option.click();
+        await MP.sleep(250);
+        return dropdownAccepted(el, value, option);
+      }
     }
 
     if (el.tagName === 'INPUT') {
@@ -512,7 +552,7 @@
       if (option) {
         option.click();
         await MP.sleep(250);
-        return true;
+        return dropdownAccepted(el, value, option);
       }
     }
     try {
@@ -541,6 +581,42 @@
       new InputEvent('input', { bubbles: true, inputType: 'insertText', data: value })
     );
     el.dispatchEvent(new Event('change', { bubbles: true }));
+    const got = MP.clean(el.innerText || '');
+    if (got.length >= Math.min(10, MP.clean(value).length)) return true;
+    try {
+      el.innerText = value;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (e) {
+      return false;
+    }
+    return MP.clean(el.innerText || '').length >= Math.min(10, MP.clean(value).length);
+  }
+
+  /* React-controlled fields sometimes silently reject a value. Never report
+     success unless the control really holds the value now. */
+  function controlHasValue(el, value, def) {
+    if (!el) return false;
+    const numeric = def && (def.type === 'price' || def.type === 'number');
+    if (el.isContentEditable) {
+      const txt = MP.clean(el.innerText || '');
+      return !!txt && txt.length >= Math.min(3, MP.clean(value).length);
+    }
+    if (el.tagName === 'SELECT') {
+      if (el.multiple) {
+        if (el.selectedOptions.length > 0) return true;
+        const chosen = el.options[el.selectedIndex];
+        return !!chosen && !!String(chosen.value || '').trim();
+      }
+      const chosen = el.options[el.selectedIndex];
+      const text = chosen ? String(chosen.text || '') : '';
+      if (!String(el.value || '').trim()) return false;
+      if (numeric) return String(el.value).replace(/[^\d.]/g, '') === String(value).replace(/[^\d.]/g, '');
+      return !/^(select|choose|please select|--)/i.test(MP.clean(text));
+    }
+    const got = String(el.value == null ? '' : el.value);
+    if (!MP.clean(got).length) return false;
+    if (numeric) return got.replace(/[^\d.]/g, '') === String(value).replace(/[^\d.]/g, '');
     return true;
   }
 
@@ -554,22 +630,41 @@
     el.scrollIntoView({ block: 'center' });
     el.focus({ preventScroll: true });
 
-    if (el.tagName === 'SELECT') return setSelect(el, value);
+    if (el.tagName === 'SELECT') {
+      const ok = setSelect(el, value);
+      return ok && controlHasValue(el, value, def);
+    }
     if (
       el.getAttribute('role') === 'combobox' ||
-      (el.getAttribute('aria-haspopup') === 'listbox' && el.tagName !== 'INPUT') ||
-      (el.tagName === 'BUTTON' && el.getAttribute('aria-expanded') !== null)
+      el.getAttribute('role') === 'button' ||
+      el.getAttribute('aria-haspopup') === 'listbox' ||
+      el.getAttribute('aria-expanded') !== null ||
+      (el.tagName === 'BUTTON' && def.type === 'select')
     ) {
       return setDropdown(el, value);
     }
     if (el.isContentEditable) return setEditable(el, value);
 
     nativeSet(el, value);
-    return true;
+    if (controlHasValue(el, value, def)) return true;
+
+    /* Retry once with a real typing sequence for stubborn React inputs. */
+    try {
+      el.focus({ preventScroll: true });
+      el.select();
+      if (document.execCommand('insertText', false, value)) {
+        fireChange(el);
+        if (controlHasValue(el, value, def)) return true;
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    nativeSet(el, value);
+    return controlHasValue(el, value, def);
   }
 
   async function tryPickChoices(def, value) {
-    if (['category', 'subcategory', 'brand', 'title', 'description'].indexOf(def.key) !== -1) return false;
+    if (['brand', 'title', 'description', 'keywords'].indexOf(def.key) !== -1) return false;
     const parts = MP.splitList(value).filter(Boolean).slice(0, 8);
     if (!parts.length) return false;
 
@@ -873,48 +968,74 @@
   }
 
   /* ---------------- fill engine ---------------- */
-  async function fillAll(profile, opts) {
-    const options = opts || {};
-    state.profile = profile;
-    const used = new Set();
-    const filled = [];
-    const missed = [];
-    const defs = FIELDS.slice().sort((a, b) => a.prio - b.prio);
+  function fieldValue(def, profile) {
+    let value = def.get(profile);
+    if (value == null) return '';
+    if (Array.isArray(value)) value = value.join(', ');
+    value = MP.clean(String(value));
+    if (def.key === 'description') value = value.slice(0, 5000);
+    return value;
+  }
 
-    for (const def of defs) {
-      let value = def.get(profile);
-      if (value == null) continue;
-      if (Array.isArray(value)) value = value.join(', ');
-      value = MP.clean(String(value));
-      if (!value) continue;
-      if (def.key === 'description') value = value.slice(0, 5000);
-
-      const el = bestControl(def, used, !!options.onlyEmpty);
-      if (!el) {
-        if (def.type === 'select') {
-          try {
-            const picked = await tryPickChoices(def, value);
-            if (picked) {
-              filled.push(def.key);
-              continue;
-            }
-          } catch (e) {
-            /* ignore */
-          }
-        }
-        missed.push(def.key);
-        continue;
-      }
+  async function fillOne(def, profile, used, onlyEmpty) {
+    const value = fieldValue(def, profile);
+    if (!value) return { ok: false, empty: true };
+    const el = bestControl(def, used, !!onlyEmpty);
+    if (el) {
       used.add(el);
       log('Filling ' + def.label + '...');
       try {
         const ok = await setControl(el, value, def);
-        if (ok) filled.push(def.key);
-        else missed.push(def.key);
+        if (ok) return { ok: true };
       } catch (e) {
-        missed.push(def.key);
+        /* fall through to chip picker */
       }
+    }
+    /* Custom Meesho pickers often are not real form controls, or the
+       option list loads after the click. Try the chip / dropdown picker too. */
+    if (def.type === 'select') {
+      try {
+        const picked = await tryPickChoices(def, value);
+        if (picked) return { ok: true, picked: true };
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    return { ok: false };
+  }
+
+  async function fillAll(profile, opts) {
+    const options = opts || {};
+    state.profile = profile;
+    const used = new Set();
+    let filled = [];
+    let missed = [];
+    const defs = FIELDS.slice().sort((a, b) => a.prio - b.prio);
+
+    for (const def of defs) {
+      const r = await fillOne(def, profile, used, !!options.onlyEmpty);
+      if (r.empty) continue;
+      if (r.ok) filled.push(def.key);
+      else missed.push(def.key);
       await MP.sleep(230);
+    }
+
+    /* Category / sub-category / fabric fields load after the previous
+       dropdown is chosen. Retry the missed fields once the DOM settles. */
+    if (!options.noRetry) {
+      for (const wait of [800, 1800]) {
+        if (!missed.length) break;
+        await MP.sleep(wait);
+        const still = [];
+        for (const key of missed) {
+          const def = defs.find((d) => d.key === key);
+          if (!def) continue;
+          const r = await fillOne(def, profile, new Set(), true);
+          if (r.ok) filled.push(key);
+          else still.push(key);
+        }
+        missed = still;
+      }
     }
 
     const result = { ok: filled.length, filled, missed };

@@ -6,5 +6,5 @@ every 6 hours. Do not edit site/ by hand.
 Source of truth: data/shares.txt
 Website source: web/
 Share viewer: /viewer.html
-Generated: 2026-10-31T10:56:37.635Z
+Generated: 2026-10-31T17:12:50.131Z
 Products: 0
