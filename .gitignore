@@ -1,0 +1,22 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node / npm
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Local env / secrets
+.env
+.env.*
+
+# Logs / temp
+*.log
+tmp/
+temp/
+
+# Editor
+.vscode/
+.idea/

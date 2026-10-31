@@ -1,0 +1,23 @@
+# ============================================================
+# Meesho Product Pro v5 - share links for the public catalog
+# ============================================================
+#
+# Ek line me ek share link ya share code likho (blank lines aur # = ignore).
+# GitHub workflow har 6 ghante me is file ko padh kar site/data/catalog.json
+# automatic rebuild karta hai. Koi manual build nahi.
+#
+# Accepted formats:
+#   https://supplier.meesho.com/#mp=g1.XXXX
+#   https://username.github.io/meesho/#mp=g1.XXXX
+#   g1.XXXX
+#   j1.XXXX
+#   {"title":"...","price":499}
+#
+# Steps:
+#   1. Extension kholo -> Share tab -> Copy share link
+#   2. Neeche ek nayi line par paste karo
+#   3. Commit + push -> workflow 6 ghante me (ya push par turant) rebuild karega
+#
+# ------------------------------------------------------------
+# Apne share links yahan neeche add karo:
+# ------------------------------------------------------------

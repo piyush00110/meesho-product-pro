@@ -1,0 +1,26 @@
+{
+  "name": "Meesho Product Pro",
+  "short_name": "Product Pro",
+  "description": "Capture Meesho products, auto-list seller forms, and browse shared listings.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#170d24",
+  "orientation": "any",
+  "categories": ["productivity", "shopping", "business"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

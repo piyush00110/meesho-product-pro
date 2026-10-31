@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meesho + Flipkart PRO Listing Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial,sans-serif}
+body{margin:0;background:#f5f6fa;color:#1a1a1a}
+header{background:#570d48;color:#fff;padding:16px 20px;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:20px}.pro{background:#ffd600;color:#111;border-radius:6px;padding:1px 8px;font-size:12px}
+.wrap{max-width:1150px;margin:0 auto;padding:20px}
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:18px}
+.card h2{margin:0 0 12px;font-size:16px;border-left:5px solid #f43397;padding-left:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+label{font-size:13px;font-weight:600;display:block;margin-bottom:5px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid #ccc;border-radius:8px;font-size:14px}
+textarea{min-height:90px;font-size:12px}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{cursor:pointer;border:0;border-radius:8px;padding:11px 18px;font-weight:700;font-size:14px}
+.btn-gen{background:#f43397;color:#fff}.btn-flip{background:#2874f0;color:#fff}.btn-save{background:#111;color:#fff}.btn-pdf{background:#0a7d2c;color:#fff}.btn-pro{background:#6c00ff;color:#fff}
+.btn-copy{background:#e8eaf0;color:#111;padding:6px 12px;font-size:12px}
+.output{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:850px){.output{grid-template-columns:1fr}}
+.list-box{background:#fff;border-radius:12px;padding:16px}.list-box.meesho{border-top:6px solid #f43397}.list-box.flipkart{border-top:6px solid #2874f0}
+.field{border:1px solid #e2e2e2;border-radius:8px;padding:10px;margin:10px 0;background:#fafbff}
+.field h4{margin:0 0 6px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.field p{margin:0;font-size:13.5px;white-space:pre-wrap;line-height:1.5}
+.small{font-size:12px;color:#666;line-height:1.6}
+.ok{color:#0a7d2c;font-weight:700}.bad{color:#d00;font-weight:700}.warn{color:#b77900;font-weight:700}
+table.var{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}table.var th,table.var td{border:1px solid #ddd;padding:6px;text-align:center}
+.drop{border:2px dashed #999;border-radius:10px;padding:16px;text-align:center;background:#fafafa}
+</style>
+</head>
+<body>
+<header><h1>Meesho + Flipkart Catalog Tool <span class="pro">PRO v2</span></h1>
+<p>PDF → Listing → Validation → 1-Click Seller Page Auto-Fill (Extension / Tampermonkey)</p></header>
+<div class="wrap">
+
+<div class="card"><h2>Step 1: PDF Upload (koi bhi PDF)</h2>
+<div class="drop" id="drop"><input type="file" id="pdfFile" accept="application/pdf"><p class="small">Drag-drop bhi chalega. Scanned photo-PDF ho to neeche manual paste karo.</p></div>
+<textarea id="pdfText" placeholder="PDF text yaha ayega..."></textarea>
+<div class="btns"><button class="btn-pdf" onclick="parseAndFill()">PDF se Auto-Fill</button></div>
+<p class="small" id="pdfStatus"></p></div>
+
+<div class="card"><h2>Step 2: Product Info</h2>
+<div class="grid">
+<div><label>Category</label><select id="category"><option>Women Saree</option><option>Women Kurti</option><option>Men T-Shirt</option><option>Kids Dress</option><option>Women Dress Material</option><option>Blouse</option></select></div>
+<div><label>Sub-Category / Style</label><input id="subcat" value="Floral Print Daily Wear Saree"></div>
+<div><label>Fabric</label><select id="fabric"><option>Georgette</option><option>Cotton</option><option>Rayon</option><option>Silk Blend</option><option>Chiffon</option><option>Polyester</option></select></div>
+<div><label>Colors (comma)</label><input id="colors" value="Red, Maroon, Green, Blue, Black, Pink"></div>
+<div><label>Sizes</label><input id="sizes" value="Free Size"></div>
+<div><label>Cost ₹</label><input id="cost" type="number" value="320" oninput="generate()"></div>
+<div><label>Selling ₹</label><input id="selling" type="number" value="499" oninput="generate()"></div>
+<div><label>GST</label><select id="gst" onchange="generate()"><option value="auto">Auto</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option></select></div>
+<div><label>Pack of</label><select id="pack" onchange="generate()"><option>1</option><option>2</option><option>3</option></select></div>
+<div><label>Country</label><input id="country" value="India"></div>
+<div><label>Brand / Business</label><input id="biz" value="Shree Collection"></div>
+<div><label>City, State</label><input id="addr" value="Surat, Gujarat"></div>
+</div>
+<div class="btns">
+<button class="btn-gen" onclick="generate()">Generate PRO Listing</button>
+<button class="btn-pro" onclick="copyExtensionJSON()">Copy Extension JSON</button>
+<button class="btn-flip" onclick="exportProJSON()">Download PRO JSON</button>
+<button class="btn-save" onclick="saveProfile()">Save</button>
+</div></div>
+
+<div class="card"><h2>Step 2B: PRO Validation + Profit + Variants</h2>
+<div id="validation" class="small">Generate dabao...</div>
+<div id="variants"></div>
+</div>
+
+<div class="output">
+<div class="list-box meesho"><h3>Meesho Listing</h3><div id="meeshoOut"></div></div>
+<div class="list-box flipkart"><h3>Flipkart Listing</h3><div id="flipkartOut"></div></div>
+</div>
+
+<div class="card"><h2>Step 3: Seller Page par Best Auto-Fill (2 options)</h2>
+<p class="small"><b>Option A - Chrome Extension (Best, 1-click):</b> <code>Desktop\meesho\extension</code> folder ko Chrome → <code>chrome://extensions</code> → Developer mode ON → Load unpacked → extension folder select karo. Phir Meesho/Flipkart Add Product page par extension icon dabao → <b>Paste PRO JSON → Fill</b>.<br>
+<b>Option B - Tampermonkey:</b> <code>meesho-flipkart-autofiller-v2.user.js</code> install karo, page par bottom-right panel se Fill dabao.<br>
+Dono me field-by-field delay + React-safe fill + missed-field report hai.</p>
+<textarea id="proJSON" readonly placeholder="PRO JSON yaha ayega..."></textarea>
+</div>
+</div>
+
+<script>
+if(window['pdfjsLib']){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}
+const BANNED=['best','100% original','guarantee','brand','nike','adidas','fake','copy'];
+let lastPro=null;
+
+// PDF
+const pdfFile=document.getElementById('pdfFile');
+pdfFile.addEventListener('change',handlePDF);
+async function handlePDF(){const f=pdfFile.files[0];if(!f)return;document.getElementById('pdfStatus').innerText='Reading '+f.name+'...';
+try{const buf=await f.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;let full='';
+for(let i=1;i<=Math.min(pdf.numPages,20);i++){const pg=await pdf.getPage(i);const tc=await pg.getTextContent();full+=tc.items.map(s=>s.str).join(' ')+'\n';}
+document.getElementById('pdfText').value=full;document.getElementById('pdfStatus').innerText='Done ('+pdf.numPages+' pages). Auto-fill...';parseAndFill(false);}catch(e){document.getElementById('pdfStatus').innerText='Error: '+e.message;}}
+
+function findColors(t){const k=['red','maroon','green','blue','black','pink','yellow','white','grey','gray','purple','orange','navy','beige','brown','cream','wine','magenta','teal','peach','lavender','mustard','golden'];const l=t.toLowerCase();const f=[];k.forEach(c=>{if(l.includes(c))f.push(c[0].toUpperCase()+c.slice(1));});return[...new Set(f)];}
+function setSel(id,v){const el=document.getElementById(id);el.value=v;}
+function cap(s){return s[0].toUpperCase()+s.slice(1);}
+function parseAndFill(a=true){const t=document.getElementById('pdfText').value||'';if(!t.trim()){if(a)alert('PDF select karo');return;}const l=t.toLowerCase();
+if(l.includes('saree'))setSel('category','Women Saree');else if(l.includes('kurti'))setSel('category','Women Kurti');else if(l.includes('t-shirt')||l.includes('tshirt'))setSel('category','Men T-Shirt');
+const fabs=['georgette','cotton','rayon','silk','chiffon','polyester','crepe','velvet','linen'];for(const f of fabs){if(l.includes(f)){setSel('fabric',f==='silk'?'Silk Blend':cap(f));break;}}
+const c=findColors(t);if(c.length)document.getElementById('colors').value=c.join(', ');
+const sz=t.match(/\b(Free Size|XXS|XS|S|M|L|XL|XXL|3XL)\b/gi);if(sz)document.getElementById('sizes').value=[...new Set(sz.map(s=>/free/i.test(s)?'Free Size':s.toUpperCase()))].join(', ');
+const gn=re=>{const m=t.match(re);return m?parseInt(m[1].replace(/,/g,'')):null;};
+let mrp=gn(/(?:mrp|max\.? retail)[^\d]{0,10}(\d{3,5})/i),sell=gn(/(?:selling|sale price|price)[^\d]{0,10}(\d{3,5})/i),cost=gn(/cost[^\d]{0,10}(\d{3,5})/i);
+const all=[...t.matchAll(/₹\s?(\d{3,5})|Rs\.?\s?(\d{3,5})/gi)].map(m=>parseInt(m[1]||m[2]));
+if(!sell&&all.length===1)sell=all[0];if(!sell&&all.length>=2){mrp=mrp||Math.max(...all);sell=Math.min(...all);}
+if(sell)document.getElementById('selling').value=sell;if(cost)document.getElementById('cost').value=cost;
+const gm=t.match(/(5|12|18)\s*%/);if(gm)document.getElementById('gst').value=gm[1];
+const pm=t.match(/pack\s*of\s*(\d)/i);if(pm)document.getElementById('pack').value=pm[1];
+const bm=t.match(/manufactured\s*by\s*[:\-]?\s*([^\n,]{3,40})/i);if(bm)document.getElementById('biz').value=bm[1].trim();
+const lines=t.split('\n').map(s=>s.trim()).filter(s=>s.length>5&&s.length<120);if(lines[0])document.getElementById('subcat').value=lines[0].slice(0,90);
+generate();if(a)alert('Auto-fill done!');}
+
+// core
+function getHSN(c,f){f=f.toLowerCase();c=c.toLowerCase();if(c.includes('saree')){if(f.includes('cotton'))return '5208';if(f.includes('silk'))return '5007';return '5407';}if(c.includes('kurti'))return f.includes('cotton')?'5208':'6204';if(c.includes('t-shirt')||c.includes('tshirt'))return '6109';return '6211';}
+function getGST(s,sel){if(sel!=='auto')return sel+'%';return Number(s)<=2500?'5%':'18%';}
+function getCare(f){f=f.toLowerCase();if(f.includes('cotton'))return 'Machine wash cold, wash with similar colours, dry in shade, warm iron.';if(f.includes('silk'))return 'Dry clean only or gentle hand wash cold, do not bleach, low iron.';return 'Gentle hand wash cold, do not bleach, dry in shade, low iron.';}
+function getWeight(c){c=c.toLowerCase();if(c.includes('saree'))return{w:'380 - 450 grams',d:'28 x 22 x 4 cm',wn:400,l:28,b:22,h:4};if(c.includes('kurti'))return{w:'250 - 350 grams',d:'26 x 20 x 3 cm',wn:300,l:26,b:20,h:3};return{w:'180 - 250 grams',d:'24 x 18 x 3 cm',wn:220,l:24,b:18,h:3};}
+
+function generate(){
+const cat=category.value,sub=subcat.value,fab=fabric.value;
+const colors=document.getElementById('colors').value.split(',').map(s=>s.trim()).filter(Boolean);
+const sizes=document.getElementById('sizes').value;
+const cost=Number(document.getElementById('cost').value||0),sell=Number(document.getElementById('selling').value||0);
+const hsn=getHSN(cat,fab),gst=getGST(sell,document.getElementById('gst').value),care=getCare(fab),pkg=getWeight(cat);
+const pack=document.getElementById('pack').value,country=document.getElementById('country').value,biz=document.getElementById('biz').value,addr=document.getElementById('addr').value;
+let mrp=sell===499?999:Math.round(sell*1.95/10)*10+9;let disc=Math.round((1-sell/mrp)*100);
+const styleWord=cat.includes('Saree')?'Elegant':cat.includes('Kurti')?'Stylish':'Comfortable';
+let mTitle=(styleWord+' '+fab+' '+sub).slice(0,60);
+let fTitle=(biz+' '+fab+' '+cat+' - '+sub+', Pack of '+pack+', '+colors.slice(0,3).join(', ')).slice(0,190);
+const desc='Add charm to your everyday look with this '+fab.toLowerCase()+' '+cat.toLowerCase()+'. Made from soft breathable '+fab.toLowerCase()+' fabric, comfortable fit and easy drape for all-day wear. '+sub+' design perfect for daily wear, office, festive gathering and small functions. Lightweight with neat finishing, pack of '+pack+' adds value for money. Country of origin: '+country+'.';
+const sizeChart=cat.includes('Saree')?('Free Size\nSaree 5.5m + Blouse 0.8m unstitched\nWidth 44 inch\n'+care):('Sizes: '+sizes+'\nChest S-36, M-38, L-40, XL-42, XXL-44\nLength 42-44 inch');
+const highlights=cat.includes('Saree')?['Fabric: Soft '+fab+', lightweight','Pattern: '+sub,'Pack of '+pack+' with Blouse 0.8m','Occasion: Daily, Office, Festive, Party','Finish: Neat border']:['Fabric: '+fab,'Fit: Regular','Occasion: Daily/Casual/Festive','Pattern: '+sub,'Pack of '+pack];
+const keywords=[fab.toLowerCase(),cat.toLowerCase(),sub.toLowerCase(),'daily wear',...colors.map(c=>c.toLowerCase()),'low price','ethnic wear','pack of '+pack].slice(0,15);
+const manu='Manufactured by: '+biz+', Address: '+addr+', '+country;
+
+// PRO object for extension (direct fill, no recompute)
+lastPro={source:'pro-tool-v2',category:cat,subcat:sub,fabric:fab,colors:colors.join(', '),colorList:colors,sizes:sizes,cost:cost,selling:sell,mrp:mrp,discount:disc,hsn:hsn,gst:gst,gstNum:gst.replace('%',''),care:care,weightText:pkg.w,weightGrams:pkg.wn,length:pkg.l,breadth:pkg.b,height:pkg.h,dimText:pkg.d,country:country,biz:biz,addr:addr,pack:pack,
+meeshoTitle:mTitle,flipkartTitle:fTitle,description:desc,sizeChart:sizeChart,highlights:highlights,keywords:keywords.join(', '),manufacturer:manu,
+sku:fab.slice(0,3).toUpperCase()+'-'+pack+'P-'+Date.now().toString().slice(-5)};
+document.getElementById('proJSON').value=JSON.stringify(lastPro,null,2);
+
+// validation
+const bannedFound=BANNED.filter(w=>desc.toLowerCase().includes(w)||mTitle.toLowerCase().includes(w));
+const margin=sell-cost-Math.round(sell*0.05);
+let v='';
+v+=(mTitle.length<=60?'<span class=ok>✔ Title '+mTitle.length+'/60 OK</span>':'<span class=bad>✘ Title '+mTitle.length+'/60 zyada</span>')+' | ';
+v+=(bannedFound.length?'<span class=bad>✘ Banned words: '+bannedFound.join(', ')+'</span>':'<span class=ok>✔ No banned words</span>')+'<br>';
+v+=('MRP ₹'+mrp+' | Selling ₹'+sell+' | '+disc+'% off | Cost ₹'+cost+' | Est. profit ~₹'+margin+' (GST/ship alag se ghatao)')+'<br>';
+v+=('<span class='+(disc>=40&&disc<=60?'ok':'warn')+'>Discount '+disc+'% '+(disc>=40&&disc<=60?'(Meesho best 40-60%)':'(40-60% rakho)')+'</span>');
+document.getElementById('validation').innerHTML=v;
+
+// variants
+let vh='<table class=var><tr><th>SKU</th><th>Color</th><th>Size</th><th>Selling</th><th>Stock</th></tr>';
+colors.forEach(c=>{const szList=sizes.includes(',')?sizes.split(','): [sizes];szList.forEach(s=>{vh+='<tr><td>'+fab.slice(0,3).toUpperCase()+'-'+c.slice(0,3).toUpperCase()+'-'+s.trim()+'</td><td>'+c+'</td><td>'+s.trim()+'</td><td>₹'+sell+'</td><td>20</td></tr>';});});
+vh+='</table><p class=small>Variant table Meesho (color-wise) / Flipkart (size-wise) me kaam ayega.</p>';
+document.getElementById('variants').innerHTML=vh;
+
+document.getElementById('meeshoOut').innerHTML=row('1. Title (≤60)',mTitle)+row('2. Description',desc)+row('3. HSN',hsn)+row('4. GST',gst)+row('5. Colours',colors.join(', '))+row('6. Size',sizeChart)+row('7. MRP/Selling','MRP ₹'+mrp+' | ₹'+sell+' | '+disc+'% OFF')+row('8. Wt/Dim',pkg.w+' | '+pkg.d)+row('9. Care',care)+row('10. Mfg',manu)+row('11. Highlights','• '+highlights.join('<br>• '))+row('12. Keywords',keywords.join(', '));
+document.getElementById('flipkartOut').innerHTML=row('1. Title (≤200)',fTitle)+row('2. Description',desc)+row('3. HSN/GST',hsn+' / '+gst)+row('4. SKU',lastPro.sku)+row('5. Price','MRP ₹'+mrp+' Selling ₹'+sell)+row('6. Mfg',manu);
+}
+function row(t,v){return '<div class=field><h4>'+t+' <button class=btn-copy onclick="navigator.clipboard.writeText(this.parentNode.nextElementSibling.innerText).then(()=>alert(\'Copied\'))">Copy</button></h4><p>'+v+'</p></div>';}
+function saveProfile(){localStorage.setItem('listing_profile',JSON.stringify({category:category.value,subcat:subcat.value,fabric:fabric.value,colors:document.getElementById('colors').value,sizes:document.getElementById('sizes').value,cost:document.getElementById('cost').value,selling:document.getElementById('selling').value,gst:document.getElementById('gst').value,pack:document.getElementById('pack').value,country:document.getElementById('country').value,biz:document.getElementById('biz').value,addr:document.getElementById('addr').value}));alert('Saved!');}
+function exportProJSON(){if(!lastPro)generate();const b=new Blob([JSON.stringify(lastPro,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pro-listing.json';a.click();}
+function copyExtensionJSON(){if(!lastPro)generate();navigator.clipboard.writeText(JSON.stringify(lastPro)).then(()=>alert('PRO JSON copied! Extension me paste karo.'));}
+window.onload=generate;
+</script>
+</body>
+</html>

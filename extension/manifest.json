@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "Meesho Product Pro - Copy, AutoFill & Seller Tools",
+  "short_name": "Meesho Pro",
+  "version": "6.0.0",
+  "description": "Meesho product ko ek click me capture karo, poora seller form auto-list karo (fields + photos + steps), aur saara data share link / website catalog me bhejo.",
+  "permissions": [
+    "storage",
+    "scripting",
+    "downloads",
+    "clipboardWrite",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://meesho.com/*",
+    "https://*.meesho.com/*",
+    "https://*.meeshogroup.com/*",
+    "https://seller.flipkart.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Meesho Product Pro",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.meesho.com/*", "https://meesho.com/*"],
+      "js": ["common.js", "content-pdp.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://supplier.meesho.com/*", "https://seller.flipkart.com/*"],
+      "js": ["common.js", "content-seller.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["viewer.html", "viewer.css", "viewer.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+M",
+        "mac": "Command+Shift+M"
+      },
+      "description": "Open Meesho Product Pro popup"
+    }
+  }
+}

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meesho Product Pro — capture, auto-list, share</title>
+<meta name="description" content="Meesho product ko ek click me capture karo, poora seller form auto-list karo, aur saara data ek share link + searchable catalog me bhejo. Free Chrome extension + open catalog.">
+<meta name="theme-color" content="#120c1c">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta property="og:title" content="Meesho Product Pro — capture, auto-list, share">
+<meta property="og:description" content="One-click product capture, full seller form auto-list, and a shareable catalog. No server, no login.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="icon.svg">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="skip" href="#catalog">Skip to catalog</a>
+
+<header class="topbar" id="topbar">
+  <a class="brand" href="#top" aria-label="Meesho Product Pro home">
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M10 34V16.5c0-1.4 1.8-2 2.6-.9L24 31l11.4-15.4c.8-1.1 2.6-.5 2.6.9V34" stroke="currentColor" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="brandTxt">
+      <b>Meesho Product Pro</b>
+      <span>v6 · capture → auto-list → share</span>
+    </span>
+  </a>
+
+  <nav class="nav" aria-label="Main">
+    <a href="#catalog">Catalog</a>
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="https://github.com" target="_blank" rel="noopener" id="repoLink">GitHub</a>
+  </nav>
+
+  <div class="topActions">
+    <button class="iconBtn" id="themeBtn" title="Light / dark theme" aria-label="Toggle theme">
+      <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13.2A8.6 8.6 0 1 1 10.8 3 6.9 6.9 0 0 0 21 13.2z"/></svg>
+    </button>
+    <button class="btn ghost sm" id="installBtn" hidden>Install app</button>
+    <a class="btn primary sm" href="#catalog">Browse catalog</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="heroGlow" aria-hidden="true"></div>
+    <div class="heroInner">
+      <div class="heroCopy">
+        <p class="eyebrow"><span class="dot"></span> Chrome extension · free · no login</p>
+        <h1>List a product.<br><em>Not a form.</em></h1>
+        <p class="lede">
+          Ek click me Meesho product capture karo — title, price, specs, saari photos.
+          Phir poora supplier form <b>auto-list</b> karo, aur data ek share link ya
+          public catalog me bhejo.
+        </p>
+        <div class="heroCtas">
+          <a class="btn primary lg" href="#catalog">Explore catalog</a>
+          <a class="btn dark lg" href="#how">Get the extension</a>
+        </div>
+        <dl class="heroStats">
+          <div><dt id="statProducts">0</dt><dd>products</dd></div>
+          <div><dt id="statPhotos">0</dt><dd>photos</dd></div>
+          <div><dt id="statCategories">0</dt><dd>categories</dd></div>
+          <div><dt id="statUpdated">—</dt><dd>last build</dd></div>
+        </dl>
+      </div>
+
+      <div class="heroArt" aria-hidden="true">
+        <div class="flowCard">
+          <div class="flowTop">
+            <span class="pill">Live pipeline</span>
+            <span class="pulse"><i></i> auto</span>
+          </div>
+          <div class="flowProduct">
+            <div class="flowThumb"><span>M</span></div>
+            <div>
+              <b>Anarkali Kurti</b>
+              <span>₹499 · MRP ₹999</span>
+            </div>
+            <span class="offChip">50% OFF</span>
+          </div>
+          <ol class="flowSteps">
+            <li class="done"><i>1</i><div><b>Capture</b><span>title · price · specs · 6 photos</span></div></li>
+            <li class="done"><i>2</i><div><b>Auto-list</b><span>form fill → photos → next → review</span></div></li>
+            <li class="done"><i>3</i><div><b>Share</b><span>one link · full listing · catalog</span></div></li>
+          </ol>
+          <div class="flowFoot">
+            <span>gzip payload</span><span class="flowBar"><i></i></span><span>ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="catalog" id="catalog">
+    <div class="secHead">
+      <div>
+        <p class="kicker">Shared by sellers</p>
+        <h2>Product catalog</h2>
+      </div>
+      <div class="catalogMeta">
+        <span id="resultCount" class="countPill">0 products</span>
+        <button class="btn ghost sm" id="refreshBtn" title="Reload catalog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+        <input id="searchInput" type="search" placeholder="Search title, brand, category, specs…" autocomplete="off" spellcheck="false">
+        <kbd>/</kbd>
+      </label>
+      <label class="field">
+        <span>Category</span>
+        <select id="categorySelect"><option value="">All categories</option></select>
+      </label>
+      <label class="field">
+        <span>Sort</span>
+        <select id="sortSelect">
+          <option value="new">Newest first</option>
+          <option value="priceAsc">Price: low to high</option>
+          <option value="priceDesc">Price: high to low</option>
+          <option value="discount">Biggest discount</option>
+          <option value="title">Title A–Z</option>
+        </select>
+      </label>
+      <button class="btn ghost sm favToggle" id="favToggle" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3.5 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 10l6.1-.9z"/></svg>
+        Favourites <b id="favCount">0</b>
+      </button>
+    </div>
+
+    <div class="chips" id="quickChips" aria-label="Quick filters">
+      <button class="chip" data-quick="all" aria-pressed="true">All</button>
+      <button class="chip" data-quick="under499" aria-pressed="false">Under ₹499</button>
+      <button class="chip" data-quick="under999" aria-pressed="false">Under ₹999</button>
+      <button class="chip" data-quick="bigOff" aria-pressed="false">50%+ off</button>
+      <button class="chip" data-quick="photos" aria-pressed="false">6+ photos</button>
+      <button class="chip" data-quick="fav" aria-pressed="false">Favourites</button>
+    </div>
+
+    <div id="grid" class="grid" aria-live="polite"></div>
+
+    <div id="emptyState" class="emptyState" hidden>
+      <div class="emptyArt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l1.5 14h-15z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>
+      </div>
+      <h3 id="emptyTitle">Catalog khali hai</h3>
+      <p id="emptyText">Extension se product capture karo, Share tab se code copy karo, aur repo ki <code>data/shares.txt</code> me paste karo. Build automatic chalega.</p>
+      <div class="btnrow">
+        <a class="btn primary" href="#how">Setup dekho</a>
+        <button class="btn ghost" id="pasteCodeBtn">Share code se kholo</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="secHead">
+      <div>
+        <p class="kicker">Built for speed</p>
+        <h2>Sab kuch ek extension me</h2>
+      </div>
+      <p class="secNote">Capture se listing tak — manual copy-paste ki zaroorat nahi.</p>
+    </div>
+    <div class="featureGrid">
+      <article class="feature big">
+        <span class="fic">⚡</span>
+        <h3>Full auto-list</h3>
+        <p>Seller form ke har step ko khud bharta hai, photos upload karta hai aur Next dabata hai. Review step par rukta hai — Submit aapke haath me.</p>
+        <div class="miniFlow"><span>fill</span><i>→</i><span>photos</span><i>→</i><span>next</span><i>→</i><span>review</span></div>
+      </article>
+      <article class="feature">
+        <span class="fic">🧲</span>
+        <h3>One-click capture</h3>
+        <p>Title, price, MRP, rating, description, specs, colours, sizes aur saari images — product page se automatic.</p>
+      </article>
+      <article class="feature">
+        <span class="fic">🔗</span>
+        <h3>Full-data share link</h3>
+        <p>Ek link me product + specs + saari photos + listing profile + settings. Import karte hi dobara auto-list.</p>
+      </article>
+      <article class="feature">
+        <span class="fic">🧾</span>
+        <h3>Readable listing</h3>
+        <p>HSN, GST, weight, dimensions, SKU, keywords aur image links ke saath copy-paste ready listing text.</p>
+      </article>
+      <article class="feature">
+        <span class="fic">📦</span>
+        <h3>Auto-collected catalog</h3>
+        <p>Har capture ka share code queue me save hota hai. Ek click me <code>shares.txt</code> export — website khud build hoti hai.</p>
+      </article>
+      <article class="feature">
+        <span class="fic">🖼️</span>
+        <h3>Photo pack cache</h3>
+        <p>Photos background me download + compress hoti hain. CDN link expire ho to bhi upload chalta hai.</p>
+      </article>
+      <article class="feature">
+        <span class="fic">📈</span>
+        <h3>Profit + title tools</h3>
+        <p>Recommended price, break-even, margin, 60-char title meter aur keyword chips — sab popup me.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="secHead">
+      <div>
+        <p class="kicker">3 steps · 2 minutes</p>
+        <h2>Install aur start</h2>
+      </div>
+    </div>
+    <div class="howGrid">
+      <article class="howCard">
+        <span class="stepNo">01</span>
+        <h3>Extension load karo</h3>
+        <p><code>chrome://extensions</code> → Developer mode → <b>Load unpacked</b> → <code>Desktop\meesho\extension</code>.</p>
+        <small>Chrome / Edge · MV3 · koi permission drama nahi</small>
+      </article>
+      <article class="howCard">
+        <span class="stepNo">02</span>
+        <h3>Product capture + auto-list</h3>
+        <p>Meesho product page kholo → pink bag panel → <b>Auto list full form</b>. Supplier Add Product form khud bh jayega.</p>
+        <small>Photos + dropdowns + Next steps included</small>
+      </article>
+      <article class="howCard">
+        <span class="stepNo">03</span>
+        <h3>Share + catalog</h3>
+        <p>Share tab → <b>Copy code</b> (auto-collected queue) → repo ki <code>data/shares.txt</code> me paste → push.</p>
+        <small>Workflow har 6 ghante website rebuild karta hai</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="ctaGlow" aria-hidden="true"></div>
+    <div class="ctaInner">
+      <p class="kicker light">Open source · GitHub Pages</p>
+      <h2>Apna catalog chalao.<br>Har 6 ghante auto-build.</h2>
+      <p>Repo fork karo, links add karo, bas. GitHub Actions catalog + website deploy karta hai — koi manual build nahi.</p>
+      <div class="btnrow center">
+        <a class="btn light lg" id="repoCta" href="https://github.com" target="_blank" rel="noopener">View on GitHub</a>
+        <button class="btn outlineLight lg" id="pasteCodeBtn2">Open a share code</button>
+      </div>
+      <div class="ctaNote">Extension folder · <code>data/shares.txt</code> · <code>.github/workflows/build-catalog.yml</code></div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footMain">
+    <a class="brand small" href="#top">
+      <span class="mark"><svg viewBox="0 0 48 48" fill="none"><path d="M10 34V16.5c0-1.4 1.8-2 2.6-.9L24 31l11.4-15.4c.8-1.1 2.6-.5 2.6.9V34" stroke="currentColor" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="brandTxt"><b>Meesho Product Pro</b><span>capture · auto-list · share</span></span>
+    </a>
+    <p class="footNote">Sab data aapke browser me. Koi server, koi login, koi tracking nahi. Share codes URL me gzip + base64url hote hain.</p>
+  </div>
+  <div class="footLinks">
+    <a href="#catalog">Catalog</a>
+    <a href="#features">Features</a>
+    <a href="#how">Install</a>
+    <a href="https://github.com" target="_blank" rel="noopener" class="repo">GitHub</a>
+  </div>
+  <p class="footLegal">Meesho Product Pro v6 · independent seller tool, Meesho ka official product nahi.</p>
+</footer>
+
+<!-- product detail -->
+<dialog id="productDialog" class="sheet">
+  <div class="sheetInner">
+    <div class="sheetTop">
+      <button class="sheetClose iconBtn" id="dialogClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div id="dialogBody"></div>
+  </div>
+</dialog>
+
+<!-- share code prompt -->
+<dialog id="codeDialog" class="codeDialog">
+  <form method="dialog" class="codeInner">
+    <h3>Share code ya link paste karo</h3>
+    <p>Popup → Share → Copy code, ya poora <code>https://…#mp=…</code> link.</p>
+    <textarea id="codeInput" rows="3" placeholder="g1.…  /  https://…#mp=…" spellcheck="false"></textarea>
+    <div class="btnrow">
+      <button class="btn primary" value="go" id="codeGo">Open product</button>
+      <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+    </div>
+    <p class="codeErr" id="codeErr" hidden>Code decode nahi hua. Dobara copy karke try karo.</p>
+  </form>
+</dialog>
+
+<!-- compare tray -->
+<div id="compareBar" class="compareBar" hidden>
+  <div class="compareInner">
+    <span class="compareLabel">Compare <b id="compareCount">0</b>/3</span>
+    <div id="compareItems" class="compareItems"></div>
+    <button class="btn dark sm" id="compareOpen">Compare</button>
+    <button class="iconBtn" id="compareClear" title="Clear compare" aria-label="Clear compare">✕</button>
+  </div>
+</div>
+
+<dialog id="compareDialog" class="sheet wide">
+  <div class="sheetInner">
+    <div class="sheetTop">
+      <button class="sheetClose iconBtn" id="compareClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <h2 class="dialogTitle">Compare products</h2>
+    <div id="compareTable" class="compareTable"></div>
+  </div>
+</dialog>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

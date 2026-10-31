@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192" role="img" aria-label="Meesho Product Pro">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2f7d"/>
+      <stop offset=".55" stop-color="#b02bff"/>
+      <stop offset="1" stop-color="#6a2bff"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="46" fill="#170d24"/>
+  <rect x="10" y="10" width="172" height="172" rx="38" fill="url(#g)"/>
+  <rect x="10" y="10" width="172" height="86" rx="38" fill="url(#sheen)"/>
+  <path d="M48 132V66.5c0-4.6 6.1-6.6 8.9-2.8L96 122l39.1-58.3c2.8-3.8 8.9-1.8 8.9 2.8V132"
+        fill="none" stroke="#ffffff" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="150" cy="45" r="13" fill="#2ee6a8" stroke="#170d24" stroke-width="5"/>
+</svg>

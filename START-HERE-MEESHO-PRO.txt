@@ -1,0 +1,114 @@
+MEESHO PRODUCT PRO v6 - START HERE
+==================================
+
+Chrome extension yahan hai:  Desktop\meesho\extension
+Poora guide:                  Desktop\meesho\extension\README.md
+
+NEW IN v6
+---------
+- POORA naya popup design: ink app bar, live stats strip, 7-tab rail, bento cards
+- Naya SHARE tab: full data share link, viewer link, human-readable listing text
+- Share link v2 me SAB data jata hai:
+  product + specs + description + SAARI images + listing profile + settings
+- Public website (GitHub Pages index) ab poora catalog app hai: search,
+  category filters, favourites, compare, product detail + share.
+- Standalone share viewer alag page par hai: /viewer.html - product, listing,
+  specs, images, settings, raw JSON sab dikhta hai
+- GitHub workflow HAR 6 GHANTE automatic catalog rebuild karta hai
+  (koi manual build nahi, koi manual deploy nahi)
+- Public viewer URL Settings me set karo -> Viewer link usi domain ka banta hai
+- Product Library, Profit Calculator, Title Optimizer, Keyword chips, photo cache
+- Light / dark / system theme + toast notifications
+- Ctrl+Shift+M shortcut se popup khulta hai
+
+INSTALL (2 MINUTE)
+------------------
+1. Chrome me chrome://extensions kholo
+2. Developer mode ON karo
+3. "Load unpacked" dabao
+4. Desktop\meesho\extension folder select karo
+5. Pehle se khule Meesho / supplier tabs refresh karo
+
+PRODUCT DETAILS CAPTURE
+-----------------------
+- Koi Meesho product page kholo (.../p/...)
+- Bottom-right pink bag button se panel khulega
+- Ya extension icon (Ctrl+Shift+M) dabao:
+  Product tab  -> Copy all / JSON / Share / Title-Desc-Specs quick copy
+  Images tab   -> select, main image star, Download, Copy image, Copy links, Attach
+  Fill tab     -> listing preview + quality score, seller auto-fill + photos
+  Share tab    -> full share link, viewer link, listing text, import
+  Tools tab    -> profit calculator, title optimizer, keywords, photo cache
+  Library tab  -> captured products load / delete
+  Settings tab -> brand, HSN, GST, price, shipping, viewer URL, backup
+
+SELLER FORM AUTO-FILL
+---------------------
+1. Product page par "Fill seller form" dabao (ya extension > Fill tab)
+2. Supplier tab khulega - Add Product page kholo, category select karo
+3. Form fields aate hi auto-fill + photos auto-upload
+4. Images step late aaye to bhi 5 min tak photos khud attach hoti hain
+5. Next step kholte raho - 90 sec tak naye fields auto-fill honge
+
+SHARE LINK / NAYA LISTING (v6 - FULL DATA)
+------------------------------------------
+1. Extension > Share tab > "Copy" (share link)
+   Link me product + specs + description + saari images + settings + listing sab hai
+2. Naya seller page kholo (extension wala browser)
+3. Share tab > link paste > "Import & auto-fill"
+   YA link direct kholo: https://supplier.meesho.com/#mp=...
+   Form + photos aate hi auto-fill/upload ho jayenge
+
+PUBLIC WEBSITE + SHARE VIEWER
+-----------------------------
+- Share tab > "Open viewer"  -> extension ka internal viewer
+- Share tab > "Viewer link"   -> public GitHub Pages viewer link
+- GitHub Pages root (site/index.html) = poora public catalog website
+  (search, category, favourites, compare, product detail, share)
+- site/viewer.html = standalone viewer: koi bhi share link/code paste karke
+  poora data dekho
+- Website shared products ki searchable catalog bhi dikhati hai
+
+GITHUB PAGES - HAR 6 GHANTE AUTO BUILD
+--------------------------------------
+Ready files:
+  data/shares.txt                     -> apne share links yahan add karo
+  scripts/build-catalog.mjs           -> catalog builder (no npm install)
+  .github/workflows/build-catalog.yml -> har 6 ghante auto build + auto deploy
+  site/                               -> auto generated website + viewer (hand-edit na karo)
+
+One-time setup:
+1. Folder GitHub repo me push karo (main ya master branch)
+2. Repo > Settings > Pages > Source = GitHub Actions
+3. data/shares.txt me share links add karo (ek line = ek link)
+4. Commit + push
+
+Uske baad workflow khud:
+- har 6 ghante (00:00, 06:00, 12:00, 18:00 UTC) rebuild karega
+- site/data/catalog.json + poora website (web/) + viewer files regenerate karega
+- site/ auto commit + push karega
+- GitHub Pages par auto deploy karega
+
+Public URL: https://<username>.github.io/<repo>/
+Wahi URL extension ke Settings > Share viewer me daal do.
+KOI MANUAL BUILD NAHI - sab automatic hai.
+
+PHOTO PACK
+----------
+Capture hote hi photos background me cache ho jati hain.
+Isliye share link import ke baad images turant upload hoti hain,
+aur CDN link expire ho jaye to bhi upload fail nahi hota.
+
+SETTINGS
+--------
+Extension > Settings tab:
+brand, manufacturer address, HSN, GST, title limit (60), stock,
+price change %, fixed price override, weight/dimensions, max images,
+public viewer URL, auto-upload ON/OFF.
+Backup ke liye "Copy settings JSON" use karo.
+
+NOTE
+----
+Meesho/Flipkart React form hai, isliye jo fields match hoti hain wahi fill hoti hain.
+Missed fields ka list panel/popup me dikhta hai - unko Copy button se paste kar lo.
+Purana PRO JSON bhi Share tab me import ho jata hai.
