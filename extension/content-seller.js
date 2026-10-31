@@ -382,7 +382,8 @@
       if (/^(select|choose|please select|--)/i.test(text)) continue;
       let s = 0;
       if (text === n || val === n) s = 12;
-      else if (text.indexOf(n) === 0 || val.indexOf(n) === 0) s = 9;
+      else if (text.indexOf(n) === 0 || val.indexOf(n) === 0) s = 10;
+      else if (n.indexOf(text) === 0) s = 9;
       else if (text.indexOf(n) !== -1 || n.indexOf(text) !== -1) s = 8;
       else if (val.indexOf(n) !== -1) s = 6;
       if (s > bestScore) {
@@ -477,7 +478,8 @@
       if (/^(select|choose|please select|--)/i.test(text)) continue;
       let s = 0;
       if (text === wanted) s = 12;
-      else if (text.indexOf(wanted) === 0) s = 9;
+      else if (text.indexOf(wanted) === 0) s = 10;
+      else if (wanted.indexOf(text) === 0) s = 8;
       else if (text.indexOf(wanted) !== -1) s = 7;
       else if (tokens.some((t) => t && text.indexOf(t) !== -1)) s = 5;
       if (s > bestScore) {

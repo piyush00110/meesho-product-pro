@@ -118,10 +118,26 @@
     ).filter((el) => visible(el) && headingRe.test(clean(el.innerText)));
 
     for (const h of heads.slice(0, 6)) {
+      /* Prefer the heading plus its following siblings, so a title or another
+         section from the same page container never leaks into the text. */
+      const parts = [];
+      let sib = h;
+      for (let i = 0; i < 12 && sib; i++, sib = sib.nextElementSibling) {
+        if (i > 0 && (/^H[1-6]$/.test(sib.tagName) || sib.matches('nav,header,footer'))) break;
+        const t = sib.innerText || '';
+        if (t) parts.push(t);
+        if (parts.join('\n').length > 4200) break;
+      }
+      const scoped = clean(parts.join('\n'));
+      if (scoped.length > 40 && scoped.length < 6000) return scoped;
+
+      /* Fallback: climb parents, but never accept a container that holds
+         more than one top-level heading (that would be the whole page). */
       let node = h.parentElement;
       for (let i = 0; i < 4 && node; i++, node = node.parentElement) {
         const t = node.innerText || '';
-        if (t.length > 40 && t.length < 6000) return clean(t);
+        const heads2 = node.querySelectorAll('h1,h2').length;
+        if (t.length > 40 && t.length < 6000 && heads2 <= 1) return clean(t);
       }
     }
     return '';
@@ -900,6 +916,13 @@
 
     const specs = domSpecs();
     p.specifications = Object.assign({}, p.specifications, specs);
+    /* Remove accidental "specs" created from the product title line, e.g.
+       "Anarkali Kurti For Women: Floral Georgette, Full Sleeve". */
+    const titleNorm = norm(p.title || '');
+    Object.keys(p.specifications).forEach((key) => {
+      const k = norm(key);
+      if (k.length >= 10 && titleNorm.indexOf(k) === 0) delete p.specifications[key];
+    });
     if (!p.fabric) p.fabric = p.specifications.Fabric || p.specifications.Material || '';
     if (!p.pattern) p.pattern = p.specifications.Pattern || p.specifications.Print || '';
     if (!p.colors.length) {

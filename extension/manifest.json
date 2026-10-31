@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Meesho Product Pro - Copy, AutoFill & Seller Tools",
   "short_name": "Meesho Pro",
-  "version": "6.0.1",
+  "version": "6.0.2",
   "description": "Meesho product ko ek click me capture karo, poora seller form auto-list karo (fields + photos + steps), aur saara data share link / website catalog me bhejo.",
   "permissions": [
     "storage",

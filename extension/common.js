@@ -342,6 +342,8 @@
       const cut = title.slice(0, limit + 1);
       title = cut.slice(0, cut.lastIndexOf(' ') > limit * 0.6 ? cut.lastIndexOf(' ') : limit).trim();
     }
+    title = title.replace(/[\s,;:.\-|/\\]+$/, '').trim();
+    if (!title) title = 'New Product';
 
     const description = MP.buildDescription(Object.assign({}, p, { colors }), s);
 
