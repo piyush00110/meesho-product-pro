@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Meesho Product Pro - Copy, AutoFill & Seller Tools",
   "short_name": "Meesho Pro",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "description": "Meesho product ko ek click me capture karo, poora seller form auto-list karo (fields + photos + steps), aur saara data share link / website catalog me bhejo.",
   "permissions": [
     "storage",
@@ -15,6 +15,10 @@
     "https://meesho.com/*",
     "https://*.meesho.com/*",
     "https://*.meeshogroup.com/*",
+    "https://www.flipkart.com/*",
+    "https://flipkart.com/*",
+    "https://*.flixcart.com/*",
+    "https://*.fkcdn.com/*",
     "https://seller.flipkart.com/*"
   ],
   "background": {
@@ -36,7 +40,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.meesho.com/*", "https://meesho.com/*"],
+      "matches": [
+        "https://www.meesho.com/*",
+        "https://meesho.com/*",
+        "https://www.flipkart.com/*",
+        "https://flipkart.com/*"
+      ],
       "js": ["common.js", "content-pdp.js"],
       "run_at": "document_idle"
     },

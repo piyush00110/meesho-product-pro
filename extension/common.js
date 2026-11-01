@@ -161,7 +161,16 @@
     { re: /\b(top|tunic)\b/i, name: 'Top' },
     { re: /\b(night\s*suit|nightwear|nighty)\b/i, name: 'Nightwear' },
     { re: /\b(jeans|trouser|pant)\b/i, name: 'Bottom Wear' },
-    { re: /\b(kids|boy|girl|baby)\b/i, name: 'Kids Wear' }
+    { re: /\b(kids|boy|girl|baby)\b/i, name: 'Kids Wear' },
+    { re: /\b(shoe|shoes|sneaker|sneakers|sandal|slipper|footwear)\b/i, name: 'Footwear' },
+    { re: /\b(handbag|backpack|wallet|clutch|bag)\b/i, name: 'Bags' },
+    { re: /\b(watch|smartwatch)\b/i, name: 'Watches' },
+    { re: /\b(headphone|earphone|earbuds?|speaker)\b/i, name: 'Audio' },
+    { re: /\b(mobile|smartphone)\b/i, name: 'Mobiles' },
+    { re: /\b(laptop|tablet)\b/i, name: 'Electronics' },
+    { re: /\b(trimmer|shaver|grooming|hair dryer)\b/i, name: 'Grooming' },
+    { re: /\b(beauty|makeup|lipstick|serum|face cream)\b/i, name: 'Beauty' },
+    { re: /\b(bedsheet|curtain|cushion|kitchen|home decor)\b/i, name: 'Home' }
   ];
 
   MP.guessCategory = (text) => {
@@ -368,7 +377,7 @@
     ).slice(0, 18);
 
     return {
-      source: 'meesho-product',
+      source: String(p.source || 'meesho') === 'flipkart' ? 'flipkart-product' : 'meesho-product',
       sourceUrl: p.url || '',
       productId: p.productId || '',
       title,
@@ -403,7 +412,7 @@
       manufacturer,
       manufacturerName,
       manufacturerAddress: s.manufacturerAddress || '',
-      care: specs['Care Instructions'] || specs['Wash Care'] || MP.clean(p.care || ''),
+      care: specs['Care Instructions'] || specs['Wash Care'] || specs['Fabric Care'] || MP.clean(p.care || ''),
       description,
       highlights: p.highlights || [],
       specifications: specs,
@@ -424,7 +433,7 @@
   MP.formatProductText = (p) => {
     if (!p) return '';
     const lines = [];
-    lines.push('\uD83D\uDECD\uFE0F PRODUCT DETAILS - MEESHO');
+    lines.push('\uD83D\uDECD\uFE0F PRODUCT DETAILS - ' + String(p.source || 'meesho').toUpperCase());
     lines.push('Title: ' + (p.title || ''));
     if (p.productId) lines.push('Product ID: ' + p.productId);
     if (p.category) lines.push('Category: ' + p.category);

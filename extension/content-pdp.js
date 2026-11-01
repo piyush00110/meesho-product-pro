@@ -1,7 +1,7 @@
 /* ============================================================
    Meesho Product Pro - product page scraper
-   Runs on https://www.meesho.com/* and https://meesho.com/*
-   Extracts every possible product detail and exposes a small
+   Runs on Meesho (meesho.com) and Flipkart (flipkart.com) product
+   pages. Extracts every possible product detail and exposes a small
    floating panel for 1-click copy / download / fill.
    ============================================================ */
 (function () {
@@ -9,6 +9,10 @@
   window.__MP_PDP__ = true;
   const MP = window.MP;
   if (!MP) return;
+
+  const IS_FLIPKART = /(^|\.)flipkart\.com$/i.test(location.hostname);
+  const SITE = IS_FLIPKART ? 'flipkart' : 'meesho';
+  const SITE_LABEL = IS_FLIPKART ? 'Flipkart' : 'Meesho';
 
   let lastProduct = null;
   let lastSig = '';
@@ -21,11 +25,14 @@
 
   const KNOWN_SPECS = [
     'Fabric', 'Material', 'Colour', 'Color', 'Pattern', 'Print', 'Occasion',
-    'Sleeve', 'Sleeves', 'Neck', 'Neckline', 'Fit', 'Type', 'Size', 'Pack of',
-    'Country of Origin', 'Manufacturer', 'Weight', 'Length', 'Width', 'Border',
-    'Blouse', 'Dupatta', 'Care Instructions', 'Wash Care', 'Number of Items',
-    'Net Quantity', 'Brand', 'Ideal For', 'Gender', 'Age Group', 'Closure',
-    'Shape', 'Product Code', 'SKU', 'Sold By', 'Return Policy'
+    'Sleeve', 'Sleeves', 'Sleeve Length', 'Neck', 'Neckline', 'Neck Type', 'Fit',
+    'Type', 'Size', 'Pack of', 'Country of Origin', 'Manufacturer', 'Weight',
+    'Length', 'Width', 'Border', 'Blouse', 'Dupatta', 'Care Instructions',
+    'Wash Care', 'Fabric Care', 'Number of Items', 'Net Quantity', 'Brand',
+    'Ideal For', 'Gender', 'Age Group', 'Closure', 'Shape', 'Product Code', 'SKU',
+    'Sold By', 'Return Policy', 'Weave Type', 'Secondary Color', 'Set Contains',
+    'Package Contains', 'Hem', 'Waist Rise', 'Number of Pockets', 'Strap Type',
+    'Surface Styling', 'Length Type', 'Collection', 'Trend'
   ];
 
   /* ---------------- generic helpers ---------------- */
@@ -41,6 +48,12 @@
   }
 
   function isProductPage() {
+    if (IS_FLIPKART) {
+      /* Flipkart product URLs look like /product-name/p/itmxxxxxxxx */
+      if (/\/p\/itm[a-z0-9]+/i.test(location.pathname)) return true;
+      if (/[?&]pid=[a-z0-9]+/i.test(location.search) && /\/p\//i.test(location.pathname)) return true;
+      return false;
+    }
     if (/\/p\/[a-z0-9_-]+/i.test(location.pathname)) return true;
     if (/\/(product|pdp)\//i.test(location.pathname)) return true;
     return false;
@@ -59,6 +72,10 @@
   }
 
   /* ---------------- specs ---------------- */
+  /* Longest-first so "Sleeve Length" wins over "Sleeve" and "Fabric Care"
+     over "Fabric" when a spec row is a single text line. */
+  const KNOWN_SPECS_BY_LEN = KNOWN_SPECS.slice().sort((a, b) => b.length - a.length);
+
   function canonicalSpecKey(k) {
     const n = norm(k).replace(/[^a-z0-9 ]/g, '');
     for (const known of KNOWN_SPECS) {
@@ -100,7 +117,7 @@
         }
       }
 
-      for (const known of KNOWN_SPECS) {
+      for (const known of KNOWN_SPECS_BY_LEN) {
         const n = norm(known);
         if (norm(line).indexOf(n + ' ') === 0) {
           const val = line.slice(known.length).replace(/^[\s:\-]+/, '').trim();
@@ -152,14 +169,25 @@
     const meta =
       document.querySelector('meta[property="og:description"]') ||
       document.querySelector('meta[name="description"]');
-    const md = meta ? clean(meta.getAttribute('content') || '') : '';
-    if (md.length > 60 && !/^shop for |^buy .* at best price|flipkart|amazon/i.test(md)) {
+    let md = meta ? clean(meta.getAttribute('content') || '') : '';
+    md = md.replace(/\s*[-–|]\s*(buy|shop)\b[\s\S]*$/i, '').trim();
+    if (
+      md.length > 60 &&
+      !/^shop for |^buy .* at best price|flipkart\.com|meesho\.com/i.test(md)
+    ) {
       return md.slice(0, 2000);
     }
     return '';
   }
 
   /* ---------------- images ---------------- */
+  function imageHostAllowed(host) {
+    const h = String(host || '').toLowerCase();
+    if (/(^|\.)meesho\.com$/.test(h) || /(^|\.)meeshogroup\.com$/.test(h)) return true;
+    if (/(^|\.)flixcart\.com$/.test(h) || /(^|\.)fkcdn\.com$/.test(h)) return true;
+    return false;
+  }
+
   function normalizeImage(u) {
     if (!u) return '';
     let s = String(u).trim().replace(/^['"]|['"]$/g, '');
@@ -168,11 +196,12 @@
     if (s.indexOf('//') === 0) s = 'https:' + s;
     try {
       const url = new URL(s, location.href);
-      if (!/(^|\.)meesho\.com$/i.test(url.hostname) && !/(^|\.)meeshogroup\.com$/i.test(url.hostname)) return '';
+      if (!imageHostAllowed(url.hostname)) return '';
       const path = url.pathname.toLowerCase();
       if (/(logo|icon|sprite|placeholder|avatar|favicon|loader|spinner)/.test(path)) return '';
       const hasExt = /\.(jpe?g|png|webp|gif|avif)$/i.test(path);
-      if (!hasExt && !/^images\./i.test(url.hostname)) return '';
+      const cdn = /(flixcart|fkcdn)\.com$/i.test(url.hostname);
+      if (!hasExt && !/^images\./i.test(url.hostname) && !cdn) return '';
 
       const names = Array.from(url.searchParams.keys());
       const signed = names.some((k) => /^(sig|signature|token|expires|policy|key|se|sp|sv)$/i.test(k));
@@ -256,7 +285,7 @@
   function imagesFromScriptText(text) {
     const out = [];
     const src = String(text || '').replace(/\\u002F/gi, '/').replace(/\\\//g, '/');
-    const re = /https?:\/\/images\.(?:meeshogroup|meesho)\.com\/[^"'\s<>)\]}]+/gi;
+    const re = /https?:\/\/(?:[a-z0-9.-]*\.)?(?:meeshogroup\.com|meesho\.com|flixcart\.com|fkcdn\.com)\/[^"'\s<>)\]}]+/gi;
     let m;
     while ((m = re.exec(src)) !== null) out.push(m[0]);
     return out;
@@ -519,10 +548,19 @@
 
   /* ---------------- apply sources ---------------- */
   function blankProduct() {
+    let productId = '';
+    if (IS_FLIPKART) {
+      productId =
+        (location.pathname.match(/\/p\/(itm[a-z0-9]+)/i) || [])[1] ||
+        (location.search.match(/[?&]pid=([a-z0-9]+)/i) || [])[1] ||
+        '';
+    } else {
+      productId = (location.pathname.match(/\/p\/([a-z0-9_-]+)/i) || [])[1] || '';
+    }
     return {
-      source: 'meesho',
+      source: SITE,
       url: location.href.split('#')[0],
-      productId: (location.pathname.match(/\/p\/([a-z0-9_-]+)/i) || [])[1] || '',
+      productId,
       title: '',
       brand: '',
       category: '',
@@ -714,6 +752,15 @@
   }
 
   function domTitle() {
+    if (IS_FLIPKART) {
+      /* Flipkart's <h1> is sometimes a page heading, so prefer the title node. */
+      const sels = ['.VU-ZEz', 'span.B_NuCI', 'div._6EBuvT span', '.KzDlHZ', 'div._35KyD6'];
+      for (const sel of sels) {
+        const el = document.querySelector(sel);
+        const t = el ? clean(el.innerText) : '';
+        if (t.length > 6 && t.length < 240) return t;
+      }
+    }
     const h1s = Array.from(document.querySelectorAll('h1')).filter((el) => {
       const t = clean(el.innerText);
       return visible(el) && t.length > 6 && t.length < 240;
@@ -724,10 +771,14 @@
         if (clean(h.innerText).length > clean(best.innerText).length) best = h;
       }
       const t = clean(best.innerText);
-      if (!/^(meesho|home|search|products?)$/i.test(t)) return t;
+      if (!/^(meesho|flipkart|home|search|products?)$/i.test(t)) return t;
     }
     const og = document.querySelector('meta[property="og:title"]');
-    return og ? clean(og.getAttribute('content') || '') : '';
+    if (og) {
+      const t = clean(og.getAttribute('content') || '');
+      if (t && !/^flipkart\.com$/i.test(t)) return t;
+    }
+    return '';
   }
 
   function domPrices() {
@@ -795,6 +846,13 @@
       }
     }
 
+    if (IS_FLIPKART && (!price || !mrp)) {
+      const priceEl = document.querySelector('.Nx9bqj.CxhGGd, .Nx9bqj, ._30jeq3, .hl05eU, ._16Jk6d');
+      const mrpEl = document.querySelector('.yRaY8j, ._3I9_wc, ._2pKc8D, ._3auQ3N');
+      if (priceEl && !price) price = MP.parsePrice(priceEl.innerText || priceEl.textContent || '');
+      if (mrpEl && !mrp) mrp = MP.parsePrice(mrpEl.innerText || mrpEl.textContent || '');
+    }
+
     if (!price) {
       const meta =
         document.querySelector('meta[property="product:price:amount"]') ||
@@ -842,7 +900,7 @@
     const section = findSectionText(/^(product details|specifications|product specifications|additional details)$/i);
     let specs = parseSpecs(section);
     if (Object.keys(specs).length < 2) {
-      const alt = findSectionText(/^(product information|details)$/i);
+      const alt = findSectionText(/^(product information|details|features|more details)$/i);
       specs = Object.assign(specs, parseSpecs(alt));
     }
     return specs;
@@ -877,7 +935,18 @@
       p.category = crumbs.length > 1 ? crumbs[crumbs.length - 2] : crumbs[0];
       return;
     }
-    const guess = MP.guessCategory((p.title || '') + ' ' + (p.fabric || ''));
+    if (IS_FLIPKART) {
+      const nav = Array.from(document.querySelectorAll('a[href*="/clothing/"],a[href*="/w/"]'))
+        .map((a) => clean(a.innerText))
+        .filter((t) => t && t.length < 40 && !/^home$/i.test(t));
+      if (nav.length >= 2) {
+        p.category = nav[nav.length - 1];
+        return;
+      }
+    }
+    const guess = MP.guessCategory(
+      (p.title || '') + ' ' + (p.fabric || '') + ' ' + (p.subcategory || '')
+    );
     if (guess) p.category = guess;
   }
 
@@ -904,14 +973,29 @@
     if (!p.price) p.price = dp.price;
     if (!p.mrp) p.mrp = dp.mrp;
     if (!p.discount) p.discount = dp.discount;
-    if (!p.rating) {
+    {
       const dr = domRating();
-      p.rating = dr.rating;
-      if (!p.ratingCount) p.ratingCount = dr.count;
+      if (!p.rating) p.rating = dr.rating;
+      /* DOM usually shows total ratings while JSON-LD often only has review
+         count, so keep whichever number is bigger. */
+      if (dr.count) {
+        const toNum = (v) => {
+          const s = String(v || '').replace(/,/g, '').trim();
+          const m = s.match(/^([\d.]+)\s*([KkMm])?$/);
+          if (!m) return 0;
+          const n = parseFloat(m[1]) || 0;
+          return /k/i.test(m[2] || '') ? n * 1000 : /m/i.test(m[2] || '') ? n * 1000000 : n;
+        };
+        if (!p.ratingCount || toNum(dr.count) > toNum(p.ratingCount)) p.ratingCount = dr.count;
+      }
     }
     if (!p.description) p.description = domDescription();
     if (!p.seller) p.seller = domSeller();
     if (!p.category) domCategory(p);
+    if (!p.subcategory) {
+      const guessedSub = MP.guessCategory((p.category || '') + ' ' + (p.title || ''));
+      if (guessedSub) p.subcategory = guessedSub;
+    }
     if (!p.highlights.length) p.highlights = domHighlights();
 
     const specs = domSpecs();
@@ -959,8 +1043,9 @@
 
     // 5. derive / clean
     p.title = clean(p.title)
-      .replace(/\s*[|\-]\s*(buy|meesho|online|shop).*$/i, '')
+      .replace(/\s*[|\-]\s*(buy|meesho|flipkart|online|shop).*$/i, '')
       .replace(/\s*online at best price.*$/i, '')
+      .replace(/\s*[|\-]\s*(www\.)?flipkart\.com.*$/i, '')
       .trim();
     p.description = clean(p.description);
     p.brand = clean(p.brand);
@@ -1142,7 +1227,7 @@
         return p;
       }
       if (pageBlocked()) {
-        status('Meesho ne page block kiya (Access Denied / captcha). Page refresh karke dobara try karo.', 'err');
+        status(SITE_LABEL + ' ne page block kiya (Access Denied / captcha). Page refresh karke dobara try karo.', 'err');
       } else {
         status('Details nahi mile. Page poora load hone ke baad extension icon se retry karo.', 'err');
       }
@@ -1162,7 +1247,7 @@
       return;
     }
     const list = p.images.slice(0, 8);
-    const folder = 'Meesho-' + MP.safeFolder(p.productId || p.title);
+    const folder = SITE_LABEL + '-' + MP.safeFolder(p.productId || p.title);
     for (let i = 0; i < list.length; i++) {
       status('Downloading ' + (i + 1) + '/' + list.length + '...');
       try {

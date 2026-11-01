@@ -120,8 +120,11 @@
     toast('Theme: ' + next, 'ok');
   }
 
-  function isMeeshoProduct(tab) {
-    return !!tab && /^https:\/\/(www\.)?meesho\.com\//.test(tab.url || '') && /\/p\//i.test(tab.url || '');
+  function isProductTab(tab) {
+    const url = (tab && tab.url) || '';
+    if (/^https:\/\/(www\.)?meesho\.com\//.test(url) && /\/p\//i.test(url)) return true;
+    if (/^https:\/\/(www\.)?flipkart\.com\//.test(url) && /\/p\/itm/i.test(url)) return true;
+    return false;
   }
 
   function isSeller(tab) {
@@ -769,7 +772,7 @@
     if (stored.mpTheme) applyTheme(stored.mpTheme, false);
     S.product = stored.mpProduct || null;
 
-    if (isMeeshoProduct(S.tab)) {
+    if (isProductTab(S.tab)) {
       const res = await sendToTab(S.tab, { type: 'mp-extract' });
       if (res && res.product) S.product = res.product;
     }
@@ -791,14 +794,9 @@
   }
 
   async function captureNow() {
-    if (!S.tab || !/^https:\/\/(www\.)?meesho\.com\//.test(S.tab.url || '')) {
-      setLog($('captureLog'), 'Pehle Meesho product page kholo, phir capture dabao.', 'err');
-      toast('Pehle Meesho product page kholo', 'err');
-      return;
-    }
-    if (!isMeeshoProduct(S.tab)) {
-      setLog($('captureLog'), 'Yeh product page nahi lagta. Kisi bhi product par /p/ wala URL kholo.', 'err');
-      toast('Product page (/p/) kholo', 'err');
+    if (!isProductTab(S.tab)) {
+      setLog($('captureLog'), 'Pehle Meesho ya Flipkart product page kholo, phir capture dabao.', 'err');
+      toast('Pehle Meesho/Flipkart product page kholo', 'err');
       return;
     }
     setLog($('captureLog'), 'Page scan ho raha hai...', '');
@@ -1887,7 +1885,7 @@
 
     await refresh();
 
-    if (S.tab && isMeeshoProduct(S.tab)) {
+    if (S.tab && isProductTab(S.tab)) {
       setLog($('captureLog'), 'Product auto-capture ho gaya.', 'ok');
     }
   });

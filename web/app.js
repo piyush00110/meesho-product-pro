@@ -846,7 +846,7 @@
           '</div>' +
           (item.mrp > item.selling ? '<div class="pdSave">Aap ' + inr(item.mrp - item.selling) + ' bacha rahe ho</div>' : '') +
           '<div class="pdActions">' +
-            (item.url ? '<a class="btn primary" href="' + esc(item.url) + '" target="_blank" rel="noopener">Open on Meesho</a>' : '') +
+            (item.url ? '<a class="btn primary" href="' + esc(item.url) + '" target="_blank" rel="noopener">Open on ' + (/flipkart\.com/i.test(item.url) ? 'Flipkart' : 'Meesho') + '</a>' : '') +
             '<button class="btn dark" id="pdCopyLink">Copy share link</button>' +
             '<button class="btn ghost" id="pdCopyText">Copy listing</button>' +
             '<button class="btn ghost" id="pdDownload">Download JSON</button>' +
